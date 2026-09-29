@@ -1,0 +1,24 @@
+# Haelt das Supabase-Projekt wach.
+# Der kostenlose Supabase-Tarif pausiert ein Projekt nach ~7 Tagen ohne Zugriff.
+# Dieser Job stellt alle 3 Tage eine harmlose Leseanfrage -> Projekt bleibt aktiv.
+name: Supabase wach halten
+
+on:
+  schedule:
+    - cron: '0 6 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Supabase anpingen
+        run: |
+          KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxYWtodmFpa3h0bXNkYWZvbm91Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyMzkwMzUsImV4cCI6MjA5NTgxNTAzNX0.-nAFgRLtUWyVJzn9UpBJNXWQB-5U-UawXi-i_uufvg8"
+          CODE=$(curl -s -m 30 -o /dev/null -w "%{http_code}" \
+            "https://kqakhvaikxtmsdafonou.supabase.co/rest/v1/patients?select=id&limit=1" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "Supabase antwortete mit HTTP $CODE"
+          if [ "$CODE" != "200" ]; then
+            echo "::warning::Supabase nicht erreichbar (HTTP $CODE) - Projekt ggf. pausiert."
+          fi
